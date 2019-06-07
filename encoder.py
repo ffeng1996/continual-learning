@@ -1,6 +1,6 @@
 import torch
 from torch.nn import functional as F
-from linear_nets import MLP,fc_layer
+from linear_nets import MLP,fc_layer,vgg16
 from exemplars import ExemplarHandler
 from continual_learner import ContinualLearner
 from replayer import Replayer
@@ -35,13 +35,16 @@ class Classifier(ContinualLearner, Replayer, ExemplarHandler):
         self.flatten = utils.Flatten()
 
         # fully connected hidden layers
-        self.fcE = MLP(input_size=image_channels*image_size**2, output_size=fc_units, layers=fc_layers-1,
-                       hid_size=fc_units, drop=fc_drop, batch_norm=fc_bn, nl=fc_nl, bias=bias,
-                       excitability=excitability, excit_buffer=excit_buffer, gated=gated)
-        mlp_output_size = fc_units if fc_layers>1 else image_channels*image_size**2
+        #self.fcE = MLP(input_size=image_channels*image_size**2, output_size=fc_units, layers=fc_layers-1,
+        #               hid_size=fc_units, drop=fc_drop, batch_norm=fc_bn, nl=fc_nl, bias=bias,
+        #               excitability=excitability, excit_buffer=excit_buffer, gated=gated)
+        #mlp_output_size = fc_units if fc_layers>1 else image_channels*image_size**2
+
+        self.vgg = vgg16(classes)
+
 
         # classifier
-        self.classifier = fc_layer(mlp_output_size, classes, excit_buffer=True, nl='none', drop=fc_drop)
+        #self.classifier = fc_layer(mlp_output_size, classes, excit_buffer=True, nl='none', drop=fc_drop)
 
 
     def list_init_layers(self):
@@ -53,12 +56,12 @@ class Classifier(ContinualLearner, Replayer, ExemplarHandler):
 
     @property
     def name(self):
-        return "{}_c{}".format(self.fcE.name, self.classes)
-
-
+        #return "{}_c{}".format(self.fcE.name, self.classes)
+        return "vgg_3"
     def forward(self, x):
-        final_features = self.fcE(self.flatten(x))
-        return self.classifier(final_features)
+        #final_features = self.fcE(self.flatten(x))
+        #return self.classifier(final_features)
+        return self.vgg(x)
 
     def feature_extractor(self, images):
         return self.fcE(self.flatten(images))

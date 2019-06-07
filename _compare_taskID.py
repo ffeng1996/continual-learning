@@ -7,9 +7,6 @@ import visual_plt
 import main
 
 
-# need to be done soon
-
-
 description = 'Compare two ways of using task-ID info (with different CL strategies) on permuted / split MNIST.'
 parser = argparse.ArgumentParser('./_compare_taskID.py', description=description)
 parser.add_argument('--seed', type=int, default=1, help='[first] random seed (for each random-module used)')

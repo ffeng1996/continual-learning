@@ -3,7 +3,48 @@ import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import ConcatDataset, Dataset
 import torch
+import glob
+from PIL import Image
+my_transform=transforms.Compose([transforms.Resize((64, 64)),
+                                  transforms.CenterCrop(224),
+                                transforms.ToTensor()])
 
+class MyDataset(Dataset):
+
+     def __init__(self,batch_num,mode='train',own_transform=None):
+        self.transform = own_transform
+        if mode=='train':
+            self.imgs = []
+            self.labels = []
+            for i in range(3):
+                temp = glob.glob('img/train/batch{}/{}/*.jpg'.format(batch_num, str(i)))
+                self.imgs.extend(temp)
+                self.labels.extend([i]*len(temp))
+            print("  --> batch{}'-dataset consisting of {} samples".format(batch_num, len(self)))
+        else:
+            self.imgs = []
+            self.labels = []
+            for i in range(3):
+                temp = glob.glob('img/test/{}/task{}/*.jpg'.format(str(i),batch_num))
+                self.imgs.extend(temp)
+                self.labels.extend([i]*len(temp))
+            print("  --> test'-dataset consisting of {} samples".format(len(self)))
+
+     def __getitem__(self, index):
+
+        fn = self.imgs[index]
+        label = self.labels[index]
+        img=Image.open(fn).convert('RGB')
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        return img , label
+
+
+     def __len__(self):
+
+        return len(self.imgs)
 
 def _permutate_image_pixels(image, permutation):
     '''Permutate the pixels of an image according to [permutation].
@@ -207,6 +248,17 @@ def get_multitask_experiment(name, scenario, tasks, data_dir="./datasets", only_
                 ) if scenario=='domain' else None
                 train_datasets.append(SubDataset(mnist_train, labels, target_transform=target_transform))
                 test_datasets.append(SubDataset(mnist_test, labels, target_transform=target_transform))
+    elif name == 'mydataset':
+        classes_per_task = 3
+        train_datasets = []
+        test_datasets = []
+
+        for i in range(1,4):
+            train_datasets.append(MyDataset(i,mode='train',own_transform=my_transform))
+            test_datasets.append(MyDataset(i,mode='test',own_transform=my_transform))
+        config = {'size': 224, 'channels': 3, 'classes': 3}
+
+
     else:
         raise RuntimeError('Given undefined experiment: {}'.format(name))
 
